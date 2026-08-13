@@ -10,7 +10,26 @@ from dataclasses import dataclass, field
 @dataclass
 class Settings:
     # --- targeting ---
-    target_location: str = os.environ.get("LEAD_TARGET_LOCATION", "Bhubaneswar, Odisha, India")
+    # Comma-separated list of cities. The pipeline rotates through them one
+    # per run (state tracked in the DB), so you're not stuck on one city.
+    # Default list favors large Indian metros with high business density
+    # across dentist/gym/salon/spa niches — edit freely via the
+    # LEAD_TARGET_LOCATIONS repo variable.
+    target_locations: list = field(default_factory=lambda: [
+        loc.strip() for loc in os.environ.get(
+            "LEAD_TARGET_LOCATIONS",
+            "Bhubaneswar, Odisha, India|"
+            "Mumbai, Maharashtra, India|"
+            "Bengaluru, Karnataka, India|"
+            "Delhi, India|"
+            "Hyderabad, Telangana, India|"
+            "Pune, Maharashtra, India|"
+            "Chennai, Tamil Nadu, India|"
+            "Kolkata, West Bengal, India|"
+            "Ahmedabad, Gujarat, India|"
+            "Jaipur, Rajasthan, India"
+        ).split("|") if loc.strip()
+    ])
     niches: list = field(default_factory=lambda: os.environ.get(
         "LEAD_NICHES", "dentist,gym,salon,spa"
     ).split(","))
@@ -29,13 +48,13 @@ class Settings:
 
     # --- API keys / credentials (set as GitHub Secrets, never commit these) ---
     google_places_api_key: str = os.environ.get("GOOGLE_PLACES_API_KEY", "")
-    gmail_credentials_json: str = os.environ.get("GMAIL_CREDENTIALS_JSON", "")  # OAuth client json, base64 or raw
-    gmail_token_json: str = os.environ.get("GMAIL_TOKEN_JSON", "")  # stored refresh token, base64 or raw
+    gmail_credentials_json: str = os.environ.get("GMAIL_CREDENTIALS_JSON", "")
+    gmail_token_json: str = os.environ.get("GMAIL_TOKEN_JSON", "")
 
     # --- hosting (GitHub Pages) ---
-    pages_repo_slug: str = os.environ.get("PAGES_REPO_SLUG", "")  # e.g. "yourname/lead-engine"
+    pages_repo_slug: str = os.environ.get("PAGES_REPO_SLUG", "")
     pages_branch: str = os.environ.get("PAGES_BRANCH", "gh-pages")
-    pages_base_url: str = os.environ.get("PAGES_BASE_URL", "")  # e.g. https://yourname.github.io/lead-engine
+    pages_base_url: str = os.environ.get("PAGES_BASE_URL", "")
 
     db_path: str = os.environ.get("LEAD_DB_PATH", "data/leads.db")
 
