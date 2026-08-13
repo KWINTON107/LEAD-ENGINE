@@ -1,0 +1,31 @@
+name: Weekly Digest
+
+on:
+  schedule:
+    # 5:00 PM IST Friday = 11:30 UTC Friday
+    - cron: "30 11 * * 5"
+  workflow_dispatch: {}
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Send weekly digest
+        env:
+          LEAD_SENDER_NAME: ${{ vars.LEAD_SENDER_NAME }}
+          LEAD_SENDER_EMAIL: ${{ vars.LEAD_SENDER_EMAIL }}
+          LEAD_SENDER_ADDRESS: ${{ vars.LEAD_SENDER_ADDRESS }}
+          PAGES_REPO_SLUG: ${{ github.repository }}
+          PAGES_BASE_URL: ${{ vars.PAGES_BASE_URL }}
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          GMAIL_TOKEN_JSON: ${{ secrets.GMAIL_TOKEN_JSON }}
+        run: python -m app.weekly_digest

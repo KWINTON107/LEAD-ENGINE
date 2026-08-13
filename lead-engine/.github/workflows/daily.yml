@@ -1,0 +1,46 @@
+name: Daily Lead Pipeline
+
+on:
+  schedule:
+    # 4:00 AM IST = 22:30 UTC (previous day). Adjust for your timezone —
+    # GitHub Actions cron is always UTC. Free tier: timing can slip ~5-15min.
+    - cron: "30 22 * * 0-4"   # runs 4am IST Mon-Fri (Sun 22:30 UTC .. Thu 22:30 UTC)
+  workflow_dispatch: {}       # lets you trigger it manually from the Actions tab
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Run daily pipeline
+        env:
+          LEAD_TARGET_LOCATION: ${{ vars.LEAD_TARGET_LOCATION }}
+          LEAD_NICHES: ${{ vars.LEAD_NICHES }}
+          LEAD_SENDER_NAME: ${{ vars.LEAD_SENDER_NAME }}
+          LEAD_SENDER_EMAIL: ${{ vars.LEAD_SENDER_EMAIL }}
+          LEAD_SENDER_ADDRESS: ${{ vars.LEAD_SENDER_ADDRESS }}
+          PAGES_REPO_SLUG: ${{ github.repository }}
+          PAGES_BASE_URL: ${{ vars.PAGES_BASE_URL }}
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          GMAIL_TOKEN_JSON: ${{ secrets.GMAIL_TOKEN_JSON }}
+        run: python -m app.main
+
+      - name: Commit updated database
+        run: |
+          git config user.name "lead-engine-bot"
+          git config user.email "actions@github.com"
+          git add data/leads.db
+          git diff --cached --quiet || git commit -m "Update leads DB [skip ci]"
+          git push
