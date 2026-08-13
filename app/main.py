@@ -24,6 +24,9 @@ def run():
     db.init_db()
     checkout_pages_branch()
 
+    target_location = db.get_next_location(settings.target_locations)
+    print(f"Target city for this run: {target_location}")
+
     already_today = db.prospects_contacted_today()
     remaining_capacity = max(settings.daily_capacity - already_today, 0)
     if remaining_capacity <= 0:
@@ -40,7 +43,7 @@ def run():
                 break
 
             try:
-                candidates = find_businesses(niche.strip(), settings.target_location, limit=15)
+                candidates = find_businesses(niche.strip(), target_location, limit=15)
             except Exception as e:
                 print(f"[discovery] failed for niche={niche}: {e}", file=sys.stderr)
                 continue
@@ -49,7 +52,7 @@ def run():
                 if contacted >= remaining_capacity or visits_used >= settings.max_site_visits_per_run:
                     break
 
-                if db.is_duplicate(biz["name"], settings.target_location):
+                if db.is_duplicate(biz["name"], target_location):
                     continue
 
                 # STEP 1: qualify
@@ -71,7 +74,7 @@ def run():
                     continue
 
                 prospect_id = db.insert_prospect(
-                    business_name=biz["name"], niche=niche.strip(), location=settings.target_location,
+                    business_name=biz["name"], niche=niche.strip(), location=target_location,
                     website_url=biz["website"], quality_score=quality_score, scraped_data=scraped,
                 )
 
