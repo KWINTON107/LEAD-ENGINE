@@ -55,6 +55,11 @@ CREATE TABLE IF NOT EXISTS opt_out (
     email TEXT PRIMARY KEY,
     requested_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS pipeline_state (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
 """
 
 
@@ -145,6 +150,29 @@ def prospects_contacted_today() -> int:
             "AND date(outreach_date) = date('now')"
         ).fetchone()
         return row["c"]
+
+
+def get_next_location(locations: list) -> str:
+    """Cycles through `locations` one per call, remembering position in the
+    DB so consecutive runs (even in fresh CI containers) pick up where the
+    last run left off, and wrap back to the start after the last city."""
+    if not locations:
+        raise ValueError("No target locations configured")
+    if len(locations) == 1:
+        return locations[0]
+
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT value FROM pipeline_state WHERE key = 'last_location_index'"
+        ).fetchone()
+        last_index = int(row["value"]) if row else -1
+        next_index = (last_index + 1) % len(locations)
+        conn.execute(
+            "INSERT INTO pipeline_state (key, value) VALUES ('last_location_index', ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (str(next_index),),
+        )
+        return locations[next_index]
 
 
 def prospects_for_digest_since(iso_date: str):
