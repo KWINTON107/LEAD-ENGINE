@@ -48,13 +48,13 @@ class Settings:
 
     # --- API keys / credentials (set as GitHub Secrets, never commit these) ---
     google_places_api_key: str = os.environ.get("GOOGLE_PLACES_API_KEY", "")
-    gmail_credentials_json: str = os.environ.get("GMAIL_CREDENTIALS_JSON", "")
-    gmail_token_json: str = os.environ.get("GMAIL_TOKEN_JSON", "")
+    gmail_credentials_json: str = os.environ.get("GMAIL_CREDENTIALS_JSON", "")  # OAuth client json, base64 or raw
+    gmail_token_json: str = os.environ.get("GMAIL_TOKEN_JSON", "")  # stored refresh token, base64 or raw
 
     # --- hosting (GitHub Pages) ---
-    pages_repo_slug: str = os.environ.get("PAGES_REPO_SLUG", "")
+    pages_repo_slug: str = os.environ.get("PAGES_REPO_SLUG", "")  # e.g. "yourname/lead-engine"
     pages_branch: str = os.environ.get("PAGES_BRANCH", "gh-pages")
-    pages_base_url: str = os.environ.get("PAGES_BASE_URL", "")
+    pages_base_url: str = os.environ.get("PAGES_BASE_URL", "")  # e.g. https://yourname.github.io/lead-engine
 
     db_path: str = os.environ.get("LEAD_DB_PATH", "data/leads.db")
 
